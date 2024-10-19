@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
-import { CreateBookRequest, BookResponse, BookDTO, UpdateBookRequest } from './books.model'
+import { CreateBookRequest, BookResponse, BookDTO, UpdateBookRequest, BookFilter } from './books.model'
 import { ValidationService } from 'src/utils/validation.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { PrismaService } from 'src/utils/prisma.service';
@@ -99,14 +99,65 @@ export class BooksService {
     return BookDTO.toBookResponse(book, existingAuthor, genres)
   }
 
-  async findAll(): Promise<BookResponse[]> {
+  async findAll(filter: BookFilter): Promise<WebResponse<BookResponse[]>> {
     this.logger.info('Find all books')
 
+    const totalBooks = await this.prismaService.book.count({
+      where: {
+        OR: [
+          {
+            title: filter.search? { contains: filter.search } : undefined,
+          },
+          {
+            author: {
+              name: filter.search? { contains: filter.search } : undefined,
+            },
+          },
+          {
+            genres: {
+              some: {
+                genre: {
+                  name: filter.search? { contains: filter.search } : undefined,
+                },
+              },
+            },
+          },
+        ],
+      },
+    })
+
     const books = await this.prismaService.book.findMany({
+      where: {
+        OR: [
+          {
+            title: filter.search ? { contains: filter.search } : undefined,
+          },
+          {
+            author: {
+              name: filter.search ? { contains: filter.search } : undefined,
+            },
+          },
+          {
+            genres: {
+              some: {
+                genre: {
+                  name: filter.search ? { contains: filter.search } : undefined,
+                },
+              },
+            },
+          },
+        ],
+      },
       include: {
         author: true,
-        genres: true
-      }
+        genres: {
+          include: {
+            genre: true,
+          },
+        },
+      },
+      skip: filter.page ? (filter.page - 1) * filter.limit : undefined,
+      take: filter.limit
     })
 
     const genres = await this.prismaService.genre.findMany()
@@ -118,7 +169,12 @@ export class BooksService {
         bookResponses.push(BookDTO.toBookResponse(book, book.author, bookGenres))
     }
     
-    return bookResponses
+    return {
+      page: filter.page,
+      totalPages: Math.ceil(totalBooks / filter.limit) || 1,
+      totalBooks: totalBooks,
+      books: bookResponses
+    }
   }
 
   async findOne(id: string): Promise<BookResponse> {

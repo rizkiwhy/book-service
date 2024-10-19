@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Param, Delete, Put } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Delete, Put, Query } from '@nestjs/common'
 import { BooksService } from './books.service'
-import { BookResponse, CreateBookRequest, UpdateBookRequest } from './books.model';
+import { BookFilter, BookResponse, CreateBookRequest, UpdateBookRequest } from './books.model';
 import { BadRequestResponse, DeleteSuccessfullyResponse, NotFoundResponse, WebResponse } from 'src/utils/web.model';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('books')
 @Controller('books')
@@ -10,7 +10,7 @@ export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
   @Post()
-  @ApiResponse({ status: 200, description: 'The record has been successfully created.', type: BookResponse })
+  @ApiResponse({ status: 201, description: 'The record has been successfully created.', type: BookResponse })
   @ApiResponse({ status: 409, description: 'Error: Conflict', type: NotFoundResponse })
   @ApiResponse({ status: 400, description: 'Error: Bad Request', type: BadRequestResponse })
   @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
@@ -22,8 +22,17 @@ export class BooksController {
   @Get()
   @ApiResponse({ status: 200, description: 'The found records', type: [BookResponse] })  
   @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
-  async findAll(): Promise<BookResponse[]> {
-    const bookResponses = await this.booksService.findAll()
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search for books by title or keywords' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for pagination' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of records per page' })
+  async findAll(@Query('search') search?: string, @Query('page') page?: number, @Query('limit') limit?: number): Promise<WebResponse<BookResponse[]>> {
+    const bookFilter: BookFilter = {
+      search: search || undefined,
+      page: page ? Number(page) : undefined,
+      limit: limit? Number(limit) : undefined
+    }
+    const bookResponses = await this.booksService.findAll(bookFilter)
+
     return bookResponses
   }
 

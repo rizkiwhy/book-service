@@ -102,3 +102,9 @@ export class BookDTO {
         }
     }
 }
+
+export class BookFilter {
+    search?: string
+    page?: number
+    limit?: number
+}
