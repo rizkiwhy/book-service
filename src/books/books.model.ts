@@ -1,6 +1,33 @@
 import { ApiProperty, ApiResponseProperty } from "@nestjs/swagger"
 import { author, book, genre } from "@prisma/client"
-import { v4 as uuid } from 'uuid';
+
+export class UpdateBookRequest {
+    @ApiProperty({
+        example: 'Harry Potter and the Philosopher\'s Stone',
+        description: 'The title of the book',
+    })
+    title: string
+    @ApiProperty({
+        example: 'J.K. Rowling',
+        description: 'The author of the book',
+    })
+    author: string
+    @ApiProperty({
+        example: 1997,
+        description: 'The year the book was published',
+    })
+    publishedYear: number
+    @ApiProperty({
+        example: ['fantasy', 'fiction'],
+        description: 'The genres of the book',
+    })
+    genres: string[]
+    @ApiProperty({
+        example: 9,
+        description: 'The number of books in stock',
+    })
+    stock: number
+}
 
 export class CreateBookRequest {
     @ApiProperty({
