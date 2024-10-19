@@ -74,14 +74,4 @@ export class BookDTO {
             stock: book.stock
         }
     }
-    static toUserCreateInput(request: CreateBookRequest): book {
-        return {
-            id: uuid(),
-            title: request.title,
-            author_id: request.author,
-            published_year: request.publishedYear,
-            stock: request.stock,
-            createdAt: new Date(),
-        }
-    }
 }

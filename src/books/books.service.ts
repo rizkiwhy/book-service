@@ -16,7 +16,6 @@ export class BooksService {
   async create(request: CreateBookRequest): Promise<BookResponse> {
     this.logger.info(`Create a new book: ${JSON.stringify(request)}`)
     let createBookRequest = this.validationService.validate(BookValidation.Create, request)
-    // const createUserInput = BookDTO.toUserCreateInput(createBookRequest)
 
     const existingBook = await this.prismaService.book.findUnique({
       where: {
