@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, Delete, Put } from '@nestjs/common'
 import { BooksService } from './books.service'
 import { BookResponse, CreateBookRequest, UpdateBookRequest } from './books.model';
-import { BadRequestResponse, NotFoundResponse, WebResponse } from 'src/utils/web.model';
+import { BadRequestResponse, DeleteSuccessfullyResponse, NotFoundResponse, WebResponse } from 'src/utils/web.model';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('books')
@@ -49,7 +49,12 @@ export class BooksController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.booksService.remove(+id);
+  @ApiResponse({ status: 200, description: 'The deleted record', type: DeleteSuccessfullyResponse })
+  @ApiResponse({ status: 404, description: 'Book not found', type: NotFoundResponse })
+  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
+  async remove(@Param('id') id: string): Promise<WebResponse<String>> {
+    const bookResponse = this.booksService.remove(id)
+
+    return bookResponse
   }
 }
