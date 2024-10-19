@@ -1,9 +1,14 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { BookResponse } from "src/books/books.model";
 
 export class WebResponse<T> {
     data?: T
     error?: string
     message?: string
+    page?: number
+    totalPages?: number
+    totalBooks?: number
+    books?: BookResponse[]
 }
 
 export class DeleteSuccessfullyResponse<T> extends WebResponse<T> {
