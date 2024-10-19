@@ -6,6 +6,7 @@ import { PrismaService } from 'src/utils/prisma.service';
 import { Logger } from "winston";
 import { BookValidation } from './books.validation';
 import { z } from 'zod';
+import { WebResponse } from 'src/utils/web.model';
 
 @Injectable()
 export class BooksService {
@@ -241,7 +242,32 @@ export class BooksService {
     return BookDTO.toBookResponse(book, existingAuthor, genres)
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} book`;
+  async remove(id: string): Promise<WebResponse<String>> {
+    this.logger.info(`Remove book with id ${id}`)
+
+    const book = await this.prismaService.book.findUnique({
+      where: {
+        id: id
+      }
+    })
+
+    console.log(book)
+
+    if (!book) {
+      console.log('masuk sini')
+      throw new NotFoundException('Book not found')
+    }
+
+    await this.prismaService.book_genre.deleteMany({
+      where: { book_id: id },
+    });
+
+    await this.prismaService.book.delete({
+      where: {
+        id: id
+      }
+    })
+
+    return { message: 'Book deleted successfully' }
   }
 }

@@ -3,6 +3,12 @@ import { ApiProperty } from "@nestjs/swagger";
 export class WebResponse<T> {
     data?: T
     error?: string
+    message?: string
+}
+
+export class DeleteSuccessfullyResponse<T> extends WebResponse<T> {
+    @ApiProperty({ example: 'Book deleted successfully' })
+    message: string
 }
 
 export class InternalServerErrorResponse {
