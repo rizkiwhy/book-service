@@ -1,10 +1,11 @@
-import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common'
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { CreateBookRequest, BookResponse, BookDTO } from './books.model'
 import { ValidationService } from 'src/utils/validation.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { PrismaService } from 'src/utils/prisma.service';
 import { Logger } from "winston";
 import { BookValidation } from './books.validation';
+import { z } from 'zod';
 
 @Injectable()
 export class BooksService {
@@ -15,7 +16,19 @@ export class BooksService {
   ) {}
   async create(request: CreateBookRequest): Promise<BookResponse> {
     this.logger.info(`Create a new book: ${JSON.stringify(request)}`)
-    let createBookRequest = this.validationService.validate(BookValidation.Create, request)
+
+    let createBookRequest: CreateBookRequest
+    try {
+      createBookRequest = this.validationService.validate(BookValidation.Create, request)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new BadRequestException({
+          message: 'Validation failed',
+          error: error.errors[0].message,
+        })
+      }
+      throw new BadRequestException(error)
+    }
 
     const existingBook = await this.prismaService.book.findUnique({
       where: {
@@ -85,12 +98,50 @@ export class BooksService {
     return BookDTO.toBookResponse(book, existingAuthor, genres)
   }
 
-  findAll() {
-    return `This action returns all books`;
+  async findAll(): Promise<BookResponse[]> {
+    const books = await this.prismaService.book.findMany({
+      include: {
+        author: true,
+        genres: true
+      }
+    })
+
+    const genres = await this.prismaService.genre.findMany()
+
+    const bookResponses: BookResponse[] = []
+    for (const book of books) {
+        const bookGenres = genres.filter(genre => book.genres.some(bookGenre => bookGenre.genre_id === genre.id))
+
+        bookResponses.push(BookDTO.toBookResponse(book, book.author, bookGenres))
+    }
+    
+    return bookResponses
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} book`;
+  async findOne(id: string): Promise<BookResponse> {
+    const book = await this.prismaService.book.findUnique({
+      where: {
+        id: id
+      },
+      include: {
+        author: true,
+        genres: true
+      }
+    })
+
+    if (!book) {
+      throw new NotFoundException('Book not found')
+    }
+
+    const bookGenres = await this.prismaService.genre.findMany({
+      where: {
+        id: {
+          in: book.genres.map((genre) => genre.genre_id)
+        }
+      }
+    })
+
+    return BookDTO.toBookResponse(book, book.author, bookGenres)
   }
 
   update(id: number) {
