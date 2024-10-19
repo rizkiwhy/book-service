@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Delete, Put } from '@nestjs/common'
 import { BooksService } from './books.service'
-import { BookResponse, CreateBookRequest } from './books.model';
+import { BookResponse, CreateBookRequest, UpdateBookRequest } from './books.model';
 import { BadRequestResponse, NotFoundResponse, WebResponse } from 'src/utils/web.model';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -10,7 +10,7 @@ export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
   @Post()
-  @ApiResponse({ status: 201, description: 'The record has been successfully created.', type: BookResponse })
+  @ApiResponse({ status: 200, description: 'The record has been successfully created.', type: BookResponse })
   @ApiResponse({ status: 409, description: 'Error: Conflict', type: NotFoundResponse })
   @ApiResponse({ status: 400, description: 'Error: Bad Request', type: BadRequestResponse })
   @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
@@ -33,12 +33,19 @@ export class BooksController {
   @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
   async findOne(@Param('id') id: string): Promise<BookResponse> {
     const bookResponse = await this.booksService.findOne(id)
+    
     return bookResponse
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() request) {
-    return this.booksService.update(+id);
+  @Put(':id')
+  @ApiResponse({ status: 200, description: 'The updated record', type: BookResponse })
+  @ApiResponse({ status: 404, description: 'Book not found', type: NotFoundResponse })
+  @ApiResponse({ status: 400, description: 'Error: Bad Request', type: BadRequestResponse })
+  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
+  update(@Param('id') id: string, @Body() request: UpdateBookRequest): Promise<BookResponse> {
+    const bookResponse = this.booksService.update(id, request)
+
+    return bookResponse
   }
 
   @Delete(':id')

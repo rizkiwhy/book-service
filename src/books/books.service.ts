@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
-import { CreateBookRequest, BookResponse, BookDTO } from './books.model'
+import { CreateBookRequest, BookResponse, BookDTO, UpdateBookRequest } from './books.model'
 import { ValidationService } from 'src/utils/validation.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { PrismaService } from 'src/utils/prisma.service';
@@ -99,6 +99,8 @@ export class BooksService {
   }
 
   async findAll(): Promise<BookResponse[]> {
+    this.logger.info('Find all books')
+
     const books = await this.prismaService.book.findMany({
       include: {
         author: true,
@@ -119,6 +121,8 @@ export class BooksService {
   }
 
   async findOne(id: string): Promise<BookResponse> {
+    this.logger.info(`Find book with id ${id}`)
+
     const book = await this.prismaService.book.findUnique({
       where: {
         id: id
@@ -144,8 +148,97 @@ export class BooksService {
     return BookDTO.toBookResponse(book, book.author, bookGenres)
   }
 
-  update(id: number) {
-    return `This action updates a #${id} book`;
+  async update(id: string, request: UpdateBookRequest): Promise<BookResponse> {
+    this.logger.info(`Update book with id ${id}: ${JSON.stringify(request)}`)
+    
+    let updateBookRequest: UpdateBookRequest
+    try {
+      updateBookRequest = this.validationService.validate(BookValidation.Update, request)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new BadRequestException({
+          message: 'Validation failed',
+          error: error.errors[0].message,
+        })
+      }
+      throw new BadRequestException(error)
+    }
+
+    const existingBook = await this.prismaService.book.findUnique({
+      where: {
+        id: id
+      }
+    })
+
+    if (!existingBook) {
+      throw new NotFoundException('Book not found')
+    }
+
+    let existingAuthor = await this.prismaService.author.findFirst({
+      where: {
+        name: updateBookRequest.author
+      }
+    })
+
+    if (!existingAuthor) {
+      existingAuthor = await this.prismaService.author.create({
+        data: {
+          name: updateBookRequest.author
+        }
+      })
+    }
+
+    if (updateBookRequest.genres.length < 1) {
+      throw new BadRequestException('Book must have at least one genre')
+    }
+
+    let book = await this.prismaService.book.update({
+      where: {
+        id: id
+      },
+      data: {
+        title: updateBookRequest.title,
+        author: {
+          connect: {
+            id: existingAuthor.id
+          }
+        },
+        published_year: updateBookRequest.publishedYear,
+        stock: updateBookRequest.stock
+      }
+    })
+
+    const genres: any[] = []
+    const bookGenres: any[] = []
+    await Promise.all(updateBookRequest.genres.map(async (genre: string) => {
+      let existingGenre = await this.prismaService.genre.findFirst({
+          where: {
+              name: genre.toLowerCase()
+          }
+      });
+  
+      if (!existingGenre) {
+          existingGenre = await this.prismaService.genre.create({ data: { name: genre.toLowerCase() } })
+      }
+      
+      genres.push(existingGenre)
+      bookGenres.push({
+          book_id: book.id,
+          genre_id: existingGenre.id
+      })
+    }))
+
+    await this.prismaService.book_genre.deleteMany({
+      where: {
+        book_id: id
+      }
+    })
+
+    await this.prismaService.book_genre.createMany({
+      data: bookGenres
+    })
+    
+    return BookDTO.toBookResponse(book, existingAuthor, genres)
   }
 
   remove(id: number) {
