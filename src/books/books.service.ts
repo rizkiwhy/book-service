@@ -1,12 +1,12 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { CreateBookRequest, BookResponse, BookDTO, UpdateBookRequest, BookFilter } from './books.model'
-import { ValidationService } from 'src/utils/validation.service';
+import { ValidationService } from '../utils/validation.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { PrismaService } from 'src/utils/prisma.service';
+import { PrismaService } from '../utils/prisma.service';
 import { Logger } from "winston";
 import { BookValidation } from './books.validation';
 import { z } from 'zod';
-import { WebResponse } from 'src/utils/web.model';
+import { WebResponse } from '../utils/web.model';
 
 @Injectable()
 export class BooksService {
@@ -164,7 +164,7 @@ export class BooksService {
 
     const bookResponses: BookResponse[] = []
     for (const book of books) {
-        const bookGenres = genres.filter(genre => book.genres.some(bookGenre => bookGenre.genre_id === genre.id))
+        const bookGenres = genres?.filter(genre => book.genres?.some(bookGenre => bookGenre.genre_id === genre.id)) || [];
 
         bookResponses.push(BookDTO.toBookResponse(book, book.author, bookGenres))
     }

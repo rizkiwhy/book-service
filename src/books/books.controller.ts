@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, Delete, Put, Query } from '@nestjs/common'
 import { BooksService } from './books.service'
 import { BookFilter, BookResponse, CreateBookRequest, UpdateBookRequest } from './books.model';
-import { BadRequestResponse, DeleteSuccessfullyResponse, NotFoundResponse, WebResponse } from 'src/utils/web.model';
+import { BadRequestResponse, DeleteSuccessfullyResponse, InternalServerErrorResponse, NotFoundResponse, WebResponse } from '../utils/web.model';
 import { ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('books')
@@ -13,7 +13,7 @@ export class BooksController {
   @ApiResponse({ status: 201, description: 'The record has been successfully created.', type: BookResponse })
   @ApiResponse({ status: 409, description: 'Error: Conflict', type: NotFoundResponse })
   @ApiResponse({ status: 400, description: 'Error: Bad Request', type: BadRequestResponse })
-  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
+  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: InternalServerErrorResponse })
   async create(@Body() request: CreateBookRequest): Promise<BookResponse> {
     const bookResponse = await this.booksService.create(request)
     return bookResponse
@@ -21,7 +21,7 @@ export class BooksController {
 
   @Get()
   @ApiResponse({ status: 200, description: 'The found records', type: [BookResponse] })  
-  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
+  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: InternalServerErrorResponse })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Search for books by title or keywords' })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for pagination' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of records per page' })
@@ -39,7 +39,7 @@ export class BooksController {
   @Get(':id')
   @ApiResponse({ status: 200, description: 'The found record', type: BookResponse })
   @ApiResponse({ status: 404, description: 'Book not found', type: NotFoundResponse })
-  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
+  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: InternalServerErrorResponse })
   async findOne(@Param('id') id: string): Promise<BookResponse> {
     const bookResponse = await this.booksService.findOne(id)
     
@@ -50,7 +50,7 @@ export class BooksController {
   @ApiResponse({ status: 200, description: 'The updated record', type: BookResponse })
   @ApiResponse({ status: 404, description: 'Book not found', type: NotFoundResponse })
   @ApiResponse({ status: 400, description: 'Error: Bad Request', type: BadRequestResponse })
-  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
+  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: InternalServerErrorResponse })
   update(@Param('id') id: string, @Body() request: UpdateBookRequest): Promise<BookResponse> {
     const bookResponse = this.booksService.update(id, request)
 
@@ -60,7 +60,7 @@ export class BooksController {
   @Delete(':id')
   @ApiResponse({ status: 200, description: 'The deleted record', type: DeleteSuccessfullyResponse })
   @ApiResponse({ status: 404, description: 'Book not found', type: NotFoundResponse })
-  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: NotFoundResponse })
+  @ApiResponse({ status: 500, description: 'Error: Internal Server Error', type: InternalServerErrorResponse })
   async remove(@Param('id') id: string): Promise<WebResponse<String>> {
     const bookResponse = this.booksService.remove(id)
 
