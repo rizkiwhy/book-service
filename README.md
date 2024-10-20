@@ -2,6 +2,14 @@
 
 This is a simple NestJS application for managing a book database, running in a Docker environment.
 
+## API Endpoints
+- GET /books - Retrieve all books
+- GET /books/:id - Retrieve a specific book by ID
+- POST /books - Create a new book
+- PUT /books/:id - Update a book by ID
+- DELETE /books/:id - Delete a book by ID
+or localhost:3001/api
+
 ## Prerequisites
 
 - [Docker](https://www.docker.com/) installed on your machine
@@ -16,15 +24,7 @@ git clone https://github.com/rizkiwhy/book-service.git
 cd book-service
 ```
 
-## API Endpoints
-- GET /books - Retrieve all books
-- GET /books/:id - Retrieve a specific book by ID
-- POST /books - Create a new book
-- PUT /books/:id - Update a book by ID
-- DELETE /books/:id - Delete a book by ID
-or localhost:3001/api
-
-## Run the application
+### Run the application
 
 ```
 docker-compose up --build
