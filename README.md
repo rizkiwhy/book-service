@@ -12,7 +12,7 @@ This is a simple NestJS application for managing a book database, running in a D
 ### Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone [<repository-url>](https://github.com/rizkiwhy/book-service.git)
 cd book-service
 ```
 
